@@ -1,0 +1,27 @@
+{
+  "description": "Counts Claude Code token usage per model and session into .claude/hooks/token-stats.json, plus a skill that reports it.",
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/token-usage-tracker.cjs\"",
+            "timeout": 15
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/token-usage-tracker.cjs\"",
+            "timeout": 15
+          }
+        ]
+      }
+    ]
+  }
+}

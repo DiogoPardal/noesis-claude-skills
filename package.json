@@ -1,0 +1,16 @@
+{
+  "name": "noesis-ai-skills",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Noesis catalogue of Claude Code skills and plugins.",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "validate": "node tools/validate.cjs",
+    "build": "node tools/build.cjs",
+    "check": "node tools/build.cjs --check",
+    "test": "node --test"
+  }
+}

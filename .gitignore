@@ -1,0 +1,11 @@
+node_modules/
+.vscode/*
+
+# Files the hooks write at runtime (never commit them; the debug log can contain full Mentor responses).
+.claude/hooks/.mentor-poll-state.json
+.claude/hooks/.mentor-finished-runs.json
+.claude/hooks/.mentor-get-run-filter.jsonl
+.claude/hooks/.mentor-hook-debug.jsonl
+.claude/hooks/token-stats.json
+.claude/hooks/*.tmp
+.claude/settings.local.json

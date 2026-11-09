@@ -1,0 +1,8 @@
+{
+  "name": "mentor-polling",
+  "version": "1.0.0",
+  "description": "Paces mentor_get_run polls (45 s per run) and compacts their output before Claude reads it, plus a skill on how to poll and read Mentor runs.",
+  "author": {
+    "name": "Noesis"
+  }
+}
