@@ -29,13 +29,12 @@ Cada capacidade junta até três peças:
 |---|---|---|
 | `mentor-polling` | Como fazer polling e ler runs do OutSystems Mentor | `PreToolUse` (espera 45 s entre consultas ao mesmo run) e `PostToolUse` (compacta a resposta) em `mcp__.*__mentor_get_run$` |
 | `token-usage` | Como reportar o consumo de tokens do projecto | `Stop` e `SubagentStop` → `.claude/hooks/token-stats.json` |
-| `os-batch-planner` | Planear projectos OutSystems (ODC e O11) em lotes | — |
 
 ## Início rápido
 
 ```text
 /plugin marketplace add DiogoPardal/noesis-claude-skills
-/plugin install os-batch-planner@noesis
+/plugin install mentor-polling@noesis
 ```
 
 Detalhes, activação por projecto e desinstalação em [Instalação](docs/instalacao.md).

@@ -6,7 +6,7 @@ Requisitos: Claude Code, Node.js 18+ no `PATH` (os hooks correm `node`), e acess
 
 ```text
 /plugin marketplace add DiogoPardal/noesis-claude-skills
-/plugin install os-batch-planner@noesis
+/plugin install token-usage@noesis
 ```
 
 Para fixar uma tag ou branch, acrescente `#<ref>` (por exemplo `DiogoPardal/noesis-claude-skills#v1.0.0`); ver [Actualizações e segurança](actualizacao-e-seguranca.md). Sem ela, usa a branch por omissão.
@@ -33,7 +33,7 @@ Para que toda a equipa de um projecto use as mesmas capacidades, ponha no `.clau
   },
   "enabledPlugins": {
     "mentor-polling@noesis": true,
-    "os-batch-planner@noesis": true
+    "token-usage@noesis": true
   }
 }
 ```

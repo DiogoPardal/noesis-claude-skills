@@ -14,12 +14,6 @@
       "version": "1.0.0"
     },
     {
-      "name": "os-batch-planner",
-      "source": "./plugins/os-batch-planner",
-      "description": "Plans OutSystems (ODC and O11) work in session-sized batches from requirements and Figma designs. Instructions only, no hooks.",
-      "version": "1.0.0"
-    },
-    {
       "name": "token-usage",
       "source": "./plugins/token-usage",
       "description": "Counts Claude Code token usage per model and session into .claude/hooks/token-stats.json, plus a skill that reports it.",

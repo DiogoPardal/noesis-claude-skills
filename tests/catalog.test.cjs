@@ -23,7 +23,6 @@ test('plugins are self-contained and wire the expected hooks', () => {
 
   assert.deepEqual(Object.keys(hooks('mentor-polling')).sort(), ['PostToolUse', 'PreToolUse']);
   assert.deepEqual(Object.keys(hooks('token-usage')).sort(), ['Stop', 'SubagentStop']);
-  assert.equal(files.has('plugins/os-batch-planner/hooks/hooks.json'), false);
 
   for (const id of ['mentor-polling', 'token-usage']) {
     for (const entries of Object.values(hooks(id))) {
@@ -36,7 +35,8 @@ test('plugins are self-contained and wire the expected hooks', () => {
     }
   }
   assert.ok(files.has('plugins/mentor-polling/scripts/mentor-run-text.cjs'), 'the filter helper is shipped with it');
-  assert.ok(files.has('plugins/os-batch-planner/skills/os-batch-planner/references/templates.md'));
+  assert.ok(files.has('plugins/mentor-polling/skills/mentor-polling/SKILL.md'));
+  assert.ok(files.has('plugins/token-usage/skills/token-usage/SKILL.md'));
 });
 
 test('the validator rejects bad skills and capabilities', () => {
