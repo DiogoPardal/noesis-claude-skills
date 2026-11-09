@@ -1,7 +1,5 @@
 // Stop/SubagentStop hook: aggregates token usage from Claude Code transcripts into .claude/hooks/token-stats.json.
 // Counts the main transcript and every subagent transcript of the session, once per assistant message.
-// Ported from dresend/scripts-ai-outsystems@e9579633 (.claude/hooks/token-usage-tracker.cjs).
-// Only change: a leading UTF-8 BOM on stdin is ignored (as in the global ~/.claude/hooks tracker).
 const fs = require('node:fs');
 const path = require('node:path');
 

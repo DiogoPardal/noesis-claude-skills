@@ -1,6 +1,5 @@
 // PreToolUse hook: spaces out mentor_get_run polls for the same run so the agent does not hammer the API.
 // It only delays the call; it never makes a permission decision, so the normal permission flow still applies.
-// Ported unchanged from dresend/scripts-ai-outsystems@e9579633 (.claude/hooks/mentor-poll-throttle.cjs).
 const fs = require('node:fs');
 const path = require('node:path');
 

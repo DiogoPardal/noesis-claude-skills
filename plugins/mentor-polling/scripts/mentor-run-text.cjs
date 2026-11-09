@@ -1,5 +1,4 @@
 // Parsing/compaction library for mentor_get_run output. Used by mentor-get-run-filter.cjs; not a hook.
-// Ported unchanged from dresend/scripts-ai-outsystems@e9579633 (.claude/hooks/mentor-run-text.cjs).
 const fs = require('node:fs');
 
 function parseJson(value) {

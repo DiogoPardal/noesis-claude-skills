@@ -2,23 +2,25 @@
 
 Requisitos: Claude Code, Node.js 18+ no `PATH` (os hooks correm `node`), e acesso de leitura ao repositório do catálogo.
 
-## 1. Testar localmente (antes de publicar)
-
-Numa sessão do Claude Code, aponte o marketplace para a pasta local:
+## 1. Instalar a partir do GitHub
 
 ```text
-/plugin marketplace add C:\caminho\para\noesis-ai-skills
-/plugin install mentor-polling@noesis
-```
-
-## 2. Instalar a partir do GitHub (depois de publicado)
-
-```text
-/plugin marketplace add <org>/noesis-ai-skills#stable
+/plugin marketplace add DiogoPardal/noesis-claude-skills
 /plugin install os-batch-planner@noesis
 ```
 
-`#stable` fixa a ref (ver [Actualizações e segurança](actualizacao-e-seguranca.md)). Sem ela, usa a branch por omissão.
+Para fixar uma tag ou branch, acrescente `#<ref>` (por exemplo `DiogoPardal/noesis-claude-skills#v1.0.0`); ver [Actualizações e segurança](actualizacao-e-seguranca.md). Sem ela, usa a branch por omissão.
+
+O repositório é privado: o Claude Code usa as credenciais do Git da máquina para o ler.
+
+## 2. Testar alterações a partir de uma cópia local
+
+Para experimentar alterações antes de as enviar para o GitHub, aponte o marketplace para a pasta do repositório:
+
+```text
+/plugin marketplace add C:\caminho\para\noesis-claude-skills
+/plugin install mentor-polling@noesis
+```
 
 ## 3. Activar só algumas capacidades num projecto
 
@@ -27,7 +29,7 @@ Para que toda a equipa de um projecto use as mesmas capacidades, ponha no `.clau
 ```json
 {
   "extraKnownMarketplaces": {
-    "noesis": { "source": { "source": "github", "repo": "<org>/noesis-ai-skills" } }
+    "noesis": { "source": { "source": "github", "repo": "DiogoPardal/noesis-claude-skills" } }
   },
   "enabledPlugins": {
     "mentor-polling@noesis": true,
@@ -38,12 +40,10 @@ Para que toda a equipa de um projecto use as mesmas capacidades, ponha no `.clau
 
 Capacidades que não estejam em `enabledPlugins` não aparecem nesse projecto. Quem abre o projecto é convidado a confiar no marketplace e a instalar os plugins.
 
-> Por confirmar no primeiro teste real: o nome exacto do campo para fixar a ref (`#stable`) dentro de `extraKnownMarketplaces`. Esta máquina não tem a CLI `claude`, por isso a instalação ainda não foi testada de ponta a ponta.
-
 ## 4. Onde ficam os ficheiros
 
 - O plugin é copiado para a cache do Claude Code no perfil do utilizador; nada é copiado para dentro do projecto.
-- Os hooks escrevem estado no projecto, em `.claude/hooks/` (igual à origem), para manter compatibilidade com o `token-stats.json` actual. Acrescente ao `.gitignore` do projecto:
+- Os hooks escrevem estado no projecto, em `.claude/hooks/`. Acrescente ao `.gitignore` do projecto:
 
 ```gitignore
 .claude/hooks/.mentor-poll-state.json
@@ -63,8 +63,8 @@ Capacidades que não estejam em `enabledPlugins` não aparecem nesse projecto. Q
 
 ## 6. Conflitos a evitar
 
-- **Hooks antigos no mesmo projecto:** se o projecto ainda tiver os hooks em `.claude/settings.json` (como `scripts-ai-outsystems`), desactive-os antes de activar `mentor-polling`. Com os dois, o segundo throttle volta a esperar 45 s depois do primeiro.
-- **Tracker global:** se usar `~/.claude/hooks/token-usage-tracker.js`, não active também `token-usage`; os dois gravam no mesmo `token-stats.json`.
+- **Hooks locais equivalentes:** se o projecto tiver hooks próprios para `mentor_get_run` em `.claude/settings.json`, desactive-os antes de activar `mentor-polling`. Com os dois, a espera de 45 s acontece duas vezes.
+- **Outro contador de tokens:** se já tiver um hook (por exemplo global, em `~/.claude/settings.json`) que grava em `.claude/hooks/token-stats.json`, não active também `token-usage`; os dois gravam no mesmo ficheiro.
 
 ## 7. Desinstalar
 

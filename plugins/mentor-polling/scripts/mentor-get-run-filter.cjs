@@ -1,7 +1,5 @@
 // PostToolUse hook: compacts mentor_get_run output (drops reasoning/status events, merges text chunks,
 // removes duplicate run documents) before Claude sees it.
-// Ported from dresend/scripts-ai-outsystems@e9579633 (.claude/hooks/mentor-get-run-filter.cjs).
-// Only change: the helper is always loaded from this folder (the old ../../.github/hooks fallback did not exist).
 const fs = require('node:fs');
 const path = require('node:path');
 

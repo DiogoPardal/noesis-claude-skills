@@ -51,7 +51,7 @@ test('keeps the response shape: content-block array', () => {
   assert.equal(updated[0].type, 'text');
 });
 
-test('keeps the response shape: { content } object, and drops structuredContent (current behaviour)', () => {
+test('keeps the response shape: { content } object, and drops structuredContent', () => {
   const response = { content: [{ type: 'text', text: runText() }], structuredContent: { big: true }, isError: false };
   const updated = compactedText(processEvent(postToolUseEvent(response), { persist: false }));
   assert.equal(updated.isError, false);

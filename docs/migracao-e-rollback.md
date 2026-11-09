@@ -1,17 +1,17 @@
-# Migração a partir dos hooks actuais e rollback
+# Migração a partir de hooks locais e rollback
 
-Os hooks de `dresend/scripts-ai-outsystems` continuam intactos até haver aprovação para os retirar.
+Para projectos que hoje têm estes hooks copiados em `.claude/hooks/` e registados no `.claude/settings.json` do próprio projecto.
 
 ## Migrar um projecto
 
 1. Confirme que `npm test` passa na versão do catálogo que vai usar.
-2. No projecto, retire (ou comente numa cópia) as entradas `PreToolUse`, `PostToolUse`, `Stop` e `SubagentStop` que apontam para `.claude/hooks/*.cjs` em `.claude/settings.json`. Não apague os scripts ainda.
+2. No projecto, retire de `.claude/settings.json` as entradas `PreToolUse`, `PostToolUse`, `Stop` e `SubagentStop` que apontam para `.claude/hooks/*.cjs`. Não apague os scripts ainda.
 3. Active as capacidades em `enabledPlugins` (ver [Instalação](instalacao.md)).
 4. Numa sessão nova, faça um `mentor_get_run` e confirme:
    - a segunda consulta do mesmo run espera cerca de 45 s;
    - a resposta chega compactada;
    - `token-stats.json` continua a crescer no fim de cada resposta.
-5. Só depois de uma semana sem problemas, e com aprovação, apague os scripts antigos.
+5. Quando tudo estiver estável, apague os scripts antigos de `.claude/hooks/`.
 
 O estado em `.claude/hooks/` usa os mesmos nomes e formatos, por isso a contagem de tokens continua de onde estava.
 
