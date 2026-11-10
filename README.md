@@ -32,12 +32,14 @@ Cada capacidade junta até três peças:
 
 ## Início rápido
 
-```text
-/plugin marketplace add DiogoPardal/noesis-claude-skills
-/plugin install mentor-polling@noesis
-```
+Requisitos: acesso de leitura a este repositório e Node.js 18+ no `PATH`.
 
-Detalhes, activação por projecto e desinstalação em [Instalação](docs/instalacao.md).
+1. No Claude desktop, área Code, escreva `/plugins` no chat. Abre-se **Customize → Plugins**.
+2. **Add** → **Add marketplace**, cole `https://github.com/DiogoPardal/noesis-claude-skills` e clique em **Sync**.
+3. Instale `mentor-polling` e/ou `token-usage` a partir do catálogo.
+4. Abra uma sessão nova.
+
+O passo a passo com imagens, o âmbito de activação, os comandos de terminal e a desinstalação estão em [Instalação](docs/instalacao.md).
 
 ## Desenvolvimento
 
@@ -56,11 +58,11 @@ Depois de alterar `skills/`, `runtime/` ou `capabilities/`, corra `npm run build
 
 - **`mentor-polling`:** quando compacta uma resposta, o filtro retira `structuredContent`, que ainda teria a resposta completa.
 - **`token-usage`:** se as linhas de uma mesma mensagem ficarem divididas entre duas execuções do hook, essa mensagem é contada duas vezes.
-- **Actualizações:** a versão nova chega no arranque da sessão, não antes de cada utilização de uma skill. Veja [Actualizações e segurança](docs/actualizacao-e-seguranca.md).
+- **Actualizações:** só chega versão nova quando `version` sobe. A actualização automática vem desligada para este catálogo. Uma versão nova só se aplica com `/reload-plugins` ou numa sessão nova, nunca antes de cada utilização de uma skill. Veja [Actualizações e segurança](docs/actualizacao-e-seguranca.md).
 
 ## Documentação
 
-- [Instalação, activação por projecto e desinstalação](docs/instalacao.md)
+- [Instalação, activação e desinstalação](docs/instalacao.md)
 - [Acrescentar uma skill nova](docs/adicionar-skill.md)
 - [Actualizações e segurança](docs/actualizacao-e-seguranca.md)
 - [Migração a partir de hooks locais e rollback](docs/migracao-e-rollback.md)
