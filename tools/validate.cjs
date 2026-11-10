@@ -1,4 +1,6 @@
-// Validates skills/ (Agent Skills format) and capabilities/ (Noesis manifests). Exit code 1 on any error.
+// Validates every plugin under plugins/ and the marketplace catalogue .claude-plugin/marketplace.json.
+// plugins/<id>/ is the only source of each plugin: what is validated here is exactly what Claude Code installs.
+// Exit code 1 on any error.
 // Usage: node tools/validate.cjs [repoRoot]
 const fs = require('node:fs');
 const path = require('node:path');
@@ -7,9 +9,12 @@ const {
   listDirs, parseFrontmatter, readJson,
 } = require('./lib.cjs');
 
-function validateSkill(root, id, report) {
-  const dir = path.join(root, 'skills', id);
-  const where = `skills/${id}`;
+// Hook commands must run a script shipped inside the plugin itself.
+const COMMAND_PATTERN = /^node "\$\{CLAUDE_PLUGIN_ROOT\}\/scripts\/([^"/\\]+\.cjs)"$/;
+const REQUIRE_PATTERN = /require\(\s*['"]([^'"]+)['"]\s*\)/g;
+
+function validateSkill(skillsDir, id, where, report) {
+  const dir = path.join(skillsDir, id);
   const file = path.join(dir, 'SKILL.md');
   if (!fs.existsSync(file)) return report.error(where, 'missing SKILL.md');
 
@@ -19,7 +24,7 @@ function validateSkill(root, id, report) {
   const name = typeof data.name === 'string' ? data.name : '';
   if (!name) report.error(where, 'frontmatter "name" is required');
   else {
-    if (name.length > 64) report.error(where, `"name" is longer than 64 characters`);
+    if (name.length > 64) report.error(where, '"name" is longer than 64 characters');
     if (!NAME_PATTERN.test(name)) report.error(where, `"name" must be lowercase letters, digits and single hyphens: "${name}"`);
     if (name !== id) report.error(where, `"name" (${name}) must match the folder name (${id})`);
   }
@@ -45,55 +50,142 @@ function validateSkill(root, id, report) {
   }
 }
 
-function validateCapability(root, file, skills, report) {
-  const where = `capabilities/${file}`;
+// Returns the script file names that hooks.json runs.
+function validateHooks(file, scriptsDir, where, report) {
+  const used = new Set();
   let manifest;
   try {
-    manifest = readJson(path.join(root, 'capabilities', file));
+    manifest = readJson(file);
   } catch (error) {
-    return report.error(where, `invalid JSON: ${error.message}`);
+    report.error(where, `invalid JSON: ${error.message}`);
+    return used;
+  }
+  const hooks = manifest?.hooks;
+  if (!hooks || typeof hooks !== 'object' || Array.isArray(hooks)) {
+    report.error(where, '"hooks" must be an object of event names');
+    return used;
   }
 
-  const id = path.basename(file, '.json');
-  if (manifest.id !== id) report.error(where, `"id" (${manifest.id}) must match the file name (${id})`);
-  if (!NAME_PATTERN.test(String(manifest.id ?? ''))) report.error(where, '"id" must be lowercase letters, digits and single hyphens');
-  if (!SEMVER_PATTERN.test(String(manifest.version ?? ''))) report.error(where, '"version" must be semver (e.g. 1.0.0)');
-  if (!manifest.description || String(manifest.description).length > 1024) {
-    report.error(where, '"description" is required (max 1024 characters)');
-  }
-
-  const declaredSkills = manifest.skills ?? [];
-  if (!Array.isArray(declaredSkills)) report.error(where, '"skills" must be an array');
-  for (const skill of Array.isArray(declaredSkills) ? declaredSkills : []) {
-    if (!skills.includes(skill)) report.error(where, `skill "${skill}" does not exist in skills/`);
-  }
-
-  const runtime = manifest.runtime ?? [];
-  const scripts = new Set();
-  for (const rel of Array.isArray(runtime) ? runtime : []) {
-    if (!/^runtime\/[^\0]+$/.test(rel) || rel.includes('..')) report.error(where, `runtime path must be inside runtime/: ${rel}`);
-    else if (!fs.existsSync(path.join(root, rel))) report.error(where, `runtime file not found: ${rel}`);
-    const base = path.posix.basename(rel);
-    if (scripts.has(base)) report.error(where, `two runtime files share the name ${base}`);
-    scripts.add(base);
-  }
-
-  const hooks = manifest.hooks ?? {};
   for (const [event, entries] of Object.entries(hooks)) {
     if (!HOOK_EVENTS.has(event)) report.error(where, `unknown hook event "${event}"`);
-    for (const entry of Array.isArray(entries) ? entries : []) {
-      if (!scripts.has(entry.script)) report.error(where, `${event}: script "${entry.script}" is not listed in "runtime"`);
-      if (!(Number.isInteger(entry.timeout) && entry.timeout >= 1 && entry.timeout <= 600)) {
-        report.error(where, `${event}: "timeout" must be an integer number of seconds between 1 and 600`);
-      }
+    if (!Array.isArray(entries)) { report.error(where, `${event}: must be an array`); continue; }
+    for (const entry of entries) {
       if (entry.matcher !== undefined) {
         try { new RegExp(entry.matcher); } catch { report.error(where, `${event}: invalid matcher regex ${entry.matcher}`); }
       }
+      if (!Array.isArray(entry.hooks) || entry.hooks.length === 0) {
+        report.error(where, `${event}: each entry needs a non-empty "hooks" array`);
+        continue;
+      }
+      for (const hook of entry.hooks) {
+        if (hook.type !== 'command') report.error(where, `${event}: hook "type" must be "command"`);
+        if (!(Number.isInteger(hook.timeout) && hook.timeout >= 1 && hook.timeout <= 600)) {
+          report.error(where, `${event}: "timeout" must be an integer number of seconds between 1 and 600`);
+        }
+        const match = COMMAND_PATTERN.exec(String(hook.command ?? ''));
+        if (!match) {
+          report.error(where, `${event}: command must be node "\${CLAUDE_PLUGIN_ROOT}/scripts/<name>.cjs"`);
+          continue;
+        }
+        if (!fs.existsSync(path.join(scriptsDir, match[1]))) report.error(where, `${event}: script not found: scripts/${match[1]}`);
+        used.add(match[1]);
+      }
+    }
+  }
+  return used;
+}
+
+// Scripts may only load node: built-ins or other scripts of the same plugin, so each plugin stays self-contained.
+// Returns the script file names required by other scripts.
+function validateScripts(scriptsDir, where, report) {
+  const required = new Set();
+  const scripts = fs.existsSync(scriptsDir) ? fs.readdirSync(scriptsDir).filter(f => f.endsWith('.cjs')).sort() : [];
+  for (const script of scripts) {
+    const source = fs.readFileSync(path.join(scriptsDir, script), 'utf8');
+    for (const m of source.matchAll(REQUIRE_PATTERN)) {
+      const target = m[1];
+      if (target.startsWith('node:')) continue;
+      if (!/^\.\/[^/\\]+\.cjs$/.test(target)) {
+        report.error(`${where}/${script}`, `may only require node: modules or ./<file>.cjs in the same folder: ${target}`);
+      } else if (!fs.existsSync(path.join(scriptsDir, target.slice(2)))) {
+        report.error(`${where}/${script}`, `requires a missing file: ${target}`);
+      } else {
+        required.add(target.slice(2));
+      }
+    }
+  }
+  return { scripts, required };
+}
+
+// Returns the parsed plugin.json, or null when it is unusable.
+function validatePlugin(root, id, report) {
+  const base = path.join(root, 'plugins', id);
+  const where = `plugins/${id}`;
+  if (!NAME_PATTERN.test(id)) report.error(where, 'folder name must be lowercase letters, digits and single hyphens');
+
+  let manifest = null;
+  const manifestFile = path.join(base, '.claude-plugin', 'plugin.json');
+  if (!fs.existsSync(manifestFile)) report.error(where, 'missing .claude-plugin/plugin.json');
+  else {
+    try {
+      manifest = readJson(manifestFile);
+    } catch (error) {
+      report.error(`${where}/.claude-plugin/plugin.json`, `invalid JSON: ${error.message}`);
+    }
+  }
+  if (manifest) {
+    const at = `${where}/.claude-plugin/plugin.json`;
+    if (manifest.name !== id) report.error(at, `"name" (${manifest.name}) must match the folder name (${id})`);
+    if (!SEMVER_PATTERN.test(String(manifest.version ?? ''))) report.error(at, '"version" must be semver (e.g. 1.0.0)');
+    if (!manifest.description || String(manifest.description).length > 1024) {
+      report.error(at, '"description" is required (max 1024 characters)');
     }
   }
 
-  if (!declaredSkills.length && !Object.keys(hooks).length) report.error(where, 'a capability needs at least one skill or hook');
-  return declaredSkills;
+  const skillsDir = path.join(base, 'skills');
+  const skills = listDirs(skillsDir);
+  for (const skill of skills) validateSkill(skillsDir, skill, `${where}/skills/${skill}`, report);
+
+  const scriptsDir = path.join(base, 'scripts');
+  const hooksFile = path.join(base, 'hooks', 'hooks.json');
+  const used = fs.existsSync(hooksFile) ? validateHooks(hooksFile, scriptsDir, `${where}/hooks/hooks.json`, report) : new Set();
+  const { scripts, required } = validateScripts(scriptsDir, `${where}/scripts`, report);
+  for (const script of scripts) {
+    if (!used.has(script) && !required.has(script)) report.warn(`${where}/scripts/${script}`, 'not run by any hook nor required by another script');
+  }
+
+  if (!skills.length && !used.size) report.error(where, 'a plugin needs at least one skill or hook');
+  return manifest;
+}
+
+function validateMarketplace(root, manifests, report) {
+  const where = '.claude-plugin/marketplace.json';
+  let catalogue;
+  try {
+    catalogue = readJson(path.join(root, '.claude-plugin', 'marketplace.json'));
+  } catch (error) {
+    return report.error(where, `missing or invalid JSON: ${error.message}`);
+  }
+  if (!catalogue.name) report.error(where, '"name" is required');
+  if (!catalogue.owner?.name) report.error(where, '"owner.name" is required');
+  if (!Array.isArray(catalogue.plugins)) return report.error(where, '"plugins" must be an array');
+
+  const listed = new Set();
+  for (const entry of catalogue.plugins) {
+    const name = String(entry?.name ?? '');
+    if (listed.has(name)) report.error(where, `plugin "${name}" is listed twice`);
+    listed.add(name);
+    if (!manifests.has(name)) { report.error(where, `plugin "${name}" has no folder in plugins/`); continue; }
+    if (entry.source !== `./plugins/${name}`) report.error(where, `plugin "${name}": "source" must be "./plugins/${name}"`);
+    const manifest = manifests.get(name);
+    if (!manifest) continue;
+    for (const field of ['version', 'description']) {
+      if (entry[field] !== manifest[field]) {
+        report.error(where, `plugin "${name}": "${field}" differs from plugins/${name}/.claude-plugin/plugin.json`);
+      }
+    }
+  }
+  for (const id of manifests.keys()) if (!listed.has(id)) report.error(where, `plugin "${id}" is not listed in the catalogue`);
 }
 
 function validateRepo(root) {
@@ -104,24 +196,19 @@ function validateRepo(root) {
     warn: (where, message) => warnings.push(`${where}: ${message}`),
   };
 
-  const skills = listDirs(path.join(root, 'skills'));
-  for (const id of skills) validateSkill(root, id, report);
+  const plugins = listDirs(path.join(root, 'plugins'));
+  const manifests = new Map(plugins.map(id => [id, validatePlugin(root, id, report)]));
+  validateMarketplace(root, manifests, report);
 
-  const capabilityDir = path.join(root, 'capabilities');
-  const files = fs.existsSync(capabilityDir) ? fs.readdirSync(capabilityDir).filter(f => f.endsWith('.json')).sort() : [];
-  const shipped = new Set();
-  for (const file of files) for (const skill of validateCapability(root, file, skills, report) ?? []) shipped.add(skill);
-  for (const id of skills) if (!shipped.has(id)) report.warn(`skills/${id}`, 'not included in any capability, so it is never shipped');
-
-  return { errors, warnings, skills, capabilities: files.map(f => path.basename(f, '.json')) };
+  return { errors, warnings, plugins };
 }
 
 if (require.main === module) {
   const root = path.resolve(process.argv[2] || path.join(__dirname, '..'));
-  const { errors, warnings, skills, capabilities } = validateRepo(root);
+  const { errors, warnings, plugins } = validateRepo(root);
   for (const w of warnings) console.log(`warning  ${w}`);
   for (const e of errors) console.log(`error    ${e}`);
-  console.log(`${skills.length} skill(s), ${capabilities.length} capability(ies): ${errors.length} error(s), ${warnings.length} warning(s)`);
+  console.log(`${plugins.length} plugin(s): ${errors.length} error(s), ${warnings.length} warning(s)`);
   process.exitCode = errors.length ? 1 : 0;
 }
 

@@ -9,8 +9,6 @@
   },
   "scripts": {
     "validate": "node tools/validate.cjs",
-    "build": "node tools/build.cjs",
-    "check": "node tools/build.cjs --check",
-    "test": "node --test"
+    "test": "node tools/validate.cjs && node --test"
   }
 }

@@ -5,23 +5,23 @@ Catálogo central de skills e plugins da Noesis para o Claude Code. Cada project
 ## Como funciona
 
 ```text
-skills/  runtime/  capabilities/      ← fonte (é aqui que se edita)
-              │  npm run build
+plugins/<id>/                         ← um plugin por capacidade: é aqui que se edita
+.claude-plugin/marketplace.json       ← o catálogo "noesis", que lista os plugins
+              │  npm test (valida e testa)  →  commit  →  push
               ▼
-plugins/<capacidade>/                 ← gerado: um plugin do Claude Code por capacidade
-.claude-plugin/marketplace.json       ← gerado: o catálogo "noesis"
-              │  /plugin install <capacidade>@noesis
-              ▼
-projectos que activam só o que querem
+Claude Code: adicionar o catálogo e instalar só os plugins que se querem
 ```
 
-Cada capacidade junta até três peças:
+O que está em `plugins/<id>/` é exactamente o que o Claude Code instala. Não há passo de build nem cópias geradas.
+
+Cada plugin junta até quatro peças:
 
 | Peça | O que é | Onde vive |
 |---|---|---|
-| **Skill** | Instruções que o Claude lê quando precisa (`SKILL.md`, formato Agent Skills) | `skills/<id>/` |
-| **Script** | Código determinístico: esperar, compactar, contar | `runtime/` |
-| **Hook** | Quando o Claude Code corre o script (evento + matcher) | `capabilities/<id>.json` |
+| **Manifesto** | Nome, versão e descrição do plugin | `plugins/<id>/.claude-plugin/plugin.json` |
+| **Skill** | Instruções que o Claude lê quando precisa (`SKILL.md`, formato Agent Skills) | `plugins/<id>/skills/<skill>/` |
+| **Script** | Código determinístico: esperar, compactar, contar | `plugins/<id>/scripts/` |
+| **Hook** | Quando o Claude Code corre o script (evento + matcher) | `plugins/<id>/hooks/hooks.json` |
 
 ## Capacidades
 
@@ -46,13 +46,18 @@ O passo a passo com imagens, o âmbito de activação, os comandos de terminal e
 Requer Node.js 18 ou superior. Não há dependências npm.
 
 ```bash
-npm run validate   # valida skills e manifestos
-npm run build      # gera plugins/ e .claude-plugin/marketplace.json
-npm run check      # falha se o que está gerado não corresponder às fontes
-npm test           # testes com dados sintéticos
+npm run validate   # valida os plugins e o catálogo
+npm test           # valida e corre os testes com dados sintéticos
 ```
 
-Depois de alterar `skills/`, `runtime/` ou `capabilities/`, corra `npm run build` e faça commit das fontes e dos ficheiros gerados.
+Para alterar um plugin, faça o seguinte:
+
+1. Edite os ficheiros dentro de `plugins/<id>/`.
+2. Suba `version` em `plugins/<id>/.claude-plugin/plugin.json` e, com o mesmo valor, na entrada do plugin em `.claude-plugin/marketplace.json`. Sem subir a versão, a alteração não chega a quem já instalou.
+3. Corra `npm test`.
+4. Faça commit e push.
+
+O validador falha se as duas versões forem diferentes. Para criar um plugin novo, veja [Acrescentar um plugin](docs/adicionar-skill.md).
 
 ## Limitações conhecidas
 
@@ -63,6 +68,6 @@ Depois de alterar `skills/`, `runtime/` ou `capabilities/`, corra `npm run build
 ## Documentação
 
 - [Instalação, activação e desinstalação](docs/instalacao.md)
-- [Acrescentar uma skill nova](docs/adicionar-skill.md)
+- [Acrescentar um plugin ou uma skill](docs/adicionar-skill.md)
 - [Actualizações e segurança](docs/actualizacao-e-seguranca.md)
 - [Migração a partir de hooks locais e rollback](docs/migracao-e-rollback.md)

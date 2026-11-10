@@ -14,7 +14,13 @@ Recomendamos abrir uma **sessão nova** depois de actualizar. A documentação o
 
 ### Só há versão nova quando `version` sobe
 
-Os plugins do catálogo declaram `version` (em `capabilities/<id>.json`, copiada para `plugin.json` e `marketplace.json`). Com `version` definida, o Claude Code só entrega uma cópia nova quando esse número muda. Commits novos com a mesma versão **não chegam** a quem já instalou. Por isso, qualquer alteração a uma capacidade passa por subir `version`, correr `npm run build` e fazer commit.
+Cada plugin declara `version` em `plugins/<id>/.claude-plugin/plugin.json`, e a sua entrada em `.claude-plugin/marketplace.json` repete o mesmo valor (o validador confirma que coincidem). Com `version` definida, o Claude Code só entrega uma cópia nova quando esse número muda. Commits novos com a mesma versão **não chegam** a quem já instalou.
+
+Por isso, qualquer alteração a um plugin segue estes passos:
+
+1. Subir `version` nos dois ficheiros.
+2. Correr `npm test`.
+3. Fazer commit e push.
 
 ### Actualização manual
 
@@ -62,11 +68,11 @@ Só deve ser anunciado como garantido depois de um teste de ponta a ponta o prov
 | Desenvolvimento | Branch `main` | Só quem mantém o catálogo |
 | Fixo | Uma tag ou SHA | Projectos que precisam de reprodutibilidade |
 
-Hooks são código que corre na máquina de cada pessoa. Por isso, mudanças em `runtime/` ou nos hooks devem chegar só por tags revistas, nunca directamente da `main`.
+Hooks são código que corre na máquina de cada pessoa. Por isso, mudanças em `plugins/<id>/scripts/` ou nos hooks devem chegar só por tags revistas, nunca directamente da `main`.
 
 ## Regras de segurança
 
-- O build e a validação nunca executam scripts das skills.
+- A validação lê os ficheiros dos plugins, mas nunca executa os seus scripts.
 - Os logs de rotina guardam só contagens e identificadores, nunca conteúdo de respostas ou conversas.
 - O debug integral (`MENTOR_HOOK_DEBUG`) é opt-in, escreve o evento completo e não tem rotação; use-o só para diagnóstico e apague o ficheiro depois.
 - Nenhum script altera `settings.json`, ficheiros de código do projecto ou conteúdo editado pelo utilizador; só escrevem em `.claude/hooks/`.

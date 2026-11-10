@@ -1,4 +1,4 @@
-// Shared helpers for validate.cjs and build.cjs. No dependencies beyond Node's standard library.
+// Helpers for validate.cjs. No dependencies beyond Node's standard library.
 const fs = require('node:fs');
 const path = require('node:path');
 
