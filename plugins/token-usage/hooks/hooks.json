@@ -1,6 +1,19 @@
 {
   "description": "Counts Claude Code token usage per model and session into .claude/hooks/token-stats.json, plus a skill that reports it.",
   "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume",
+        "hooks": [
+          {
+            "type": "command",
+            "shell": "powershell",
+            "command": "$v = 0; try { $v = [int]((node --version) -replace '^v(\\d+)\\..*$', '$1') } catch {}; if ($v -lt 18) { Write-Output 'Noesis plugin token-usage: Node.js 18 or later was not found on PATH, so its hooks will not run. Tell the user to install the Node.js LTS from https://nodejs.org or with winget install OpenJS.NodeJS.LTS and then fully restart the Claude app. Do not install it without the user approval.' }",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
     "Stop": [
       {
         "hooks": [

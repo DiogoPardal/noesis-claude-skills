@@ -11,7 +11,17 @@ const {
 
 // Hook commands must run a script shipped inside the plugin itself.
 const COMMAND_PATTERN = /^node "\$\{CLAUDE_PLUGIN_ROOT\}\/scripts\/([^"/\\]+\.cjs)"$/;
-const REQUIRE_PATTERN = /require\(\s*['"]([^'"]+)['"]\s*\)/g;
+// The one exception, allowed only on SessionStart: a check that warns when Node.js 18+ is missing. It cannot be a script,
+// because a script needs node to run. It runs in PowerShell ("shell": "powershell"), which every Windows machine has,
+// so it works with or without Git Bash. Only the message may vary, as plain text without quotes.
+const NODE_CHECK_PREFIX = "$v = 0; try { $v = [int]((node --version) -replace '^v(\\d+)\\..*$', '$1') } catch {}; if ($v -lt 18) { Write-Output '";
+const NODE_CHECK_SUFFIX = "' }";
+function isNodeCheck(hook) {
+  const command = String(hook.command ?? '');
+  if (hook.shell !== 'powershell' || !command.startsWith(NODE_CHECK_PREFIX) || !command.endsWith(NODE_CHECK_SUFFIX)) return false;
+  return /^[A-Za-z0-9 .,:+/-]+$/.test(command.slice(NODE_CHECK_PREFIX.length, -NODE_CHECK_SUFFIX.length));
+}
+const REQUIRE_PATTERN =/require\(\s*['"]([^'"]+)['"]\s*\)/g;
 
 function validateSkill(skillsDir, id, where, report) {
   const dir = path.join(skillsDir, id);
@@ -82,9 +92,11 @@ function validateHooks(file, scriptsDir, where, report) {
         if (!(Number.isInteger(hook.timeout) && hook.timeout >= 1 && hook.timeout <= 600)) {
           report.error(where, `${event}: "timeout" must be an integer number of seconds between 1 and 600`);
         }
-        const match = COMMAND_PATTERN.exec(String(hook.command ?? ''));
+        const command = String(hook.command ?? '');
+        if (event === 'SessionStart' && isNodeCheck(hook)) continue;
+        const match = COMMAND_PATTERN.exec(command);
         if (!match) {
-          report.error(where, `${event}: command must be node "\${CLAUDE_PLUGIN_ROOT}/scripts/<name>.cjs"`);
+          report.error(where, `${event}: command must be node "\${CLAUDE_PLUGIN_ROOT}/scripts/<name>.cjs" (or the Node.js check on SessionStart)`);
           continue;
         }
         if (!fs.existsSync(path.join(scriptsDir, match[1]))) report.error(where, `${event}: script not found: scripts/${match[1]}`);

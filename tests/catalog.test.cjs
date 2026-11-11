@@ -28,8 +28,8 @@ test('the catalogue is valid', () => {
 });
 
 test('plugins keep their identifiers, skills and hook wiring', () => {
-  assert.deepEqual(Object.keys(hooksOf('mentor-polling')).sort(), ['PostToolUse', 'PreToolUse']);
-  assert.deepEqual(Object.keys(hooksOf('token-usage')).sort(), ['Stop', 'SubagentStop']);
+  assert.deepEqual(Object.keys(hooksOf('mentor-polling')).sort(), ['PostToolUse', 'PreToolUse', 'SessionStart']);
+  assert.deepEqual(Object.keys(hooksOf('token-usage')).sort(), ['SessionStart', 'Stop', 'SubagentStop']);
 
   const command = script => `node "\${CLAUDE_PLUGIN_ROOT}/scripts/${script}"`;
   const mentor = hooksOf('mentor-polling');

@@ -1,6 +1,19 @@
 {
   "description": "Paces mentor_get_run polls (45 s per run) and compacts their output before Claude reads it, plus a skill on how to poll and read Mentor runs.",
   "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume",
+        "hooks": [
+          {
+            "type": "command",
+            "shell": "powershell",
+            "command": "$v = 0; try { $v = [int]((node --version) -replace '^v(\\d+)\\..*$', '$1') } catch {}; if ($v -lt 18) { Write-Output 'Noesis plugin mentor-polling: Node.js 18 or later was not found on PATH, so its hooks will not run. Tell the user to install the Node.js LTS from https://nodejs.org or with winget install OpenJS.NodeJS.LTS and then fully restart the Claude app. Do not install it without the user approval.' }",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
     "PreToolUse": [
       {
         "matcher": "mcp__.*__mentor_get_run$",

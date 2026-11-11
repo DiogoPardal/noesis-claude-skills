@@ -11,13 +11,13 @@
       "name": "mentor-polling",
       "source": "./plugins/mentor-polling",
       "description": "Paces mentor_get_run polls (45 s per run) and compacts their output before Claude reads it, plus a skill on how to poll and read Mentor runs.",
-      "version": "1.0.0"
+      "version": "1.0.1"
     },
     {
       "name": "token-usage",
       "source": "./plugins/token-usage",
       "description": "Counts Claude Code token usage per model and session into .claude/hooks/token-stats.json, plus a skill that reports it.",
-      "version": "1.0.0"
+      "version": "1.0.1"
     }
   ]
 }

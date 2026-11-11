@@ -160,3 +160,37 @@ Para não ter o mesmo catálogo duas vezes, remova antes o marketplace `noesis` 
 - **Por comandos:** dentro de uma sessão do Claude Code no terminal, `/plugin uninstall mentor-polling@noesis`. Para só desligar sem desinstalar, numa shell: `claude plugin disable mentor-polling@noesis`.
 
 Retire também a entrada de `enabledPlugins` de qualquer ficheiro de definições onde esteja (secção 3). Os ficheiros de estado em `.claude/hooks/` não são apagados automaticamente; apague-os à mão se quiser.
+
+## 11. Resolução de problemas
+
+### As skills aparecem, mas os hooks não fazem nada
+
+**Sintomas:**
+- não aparece `.claude/hooks/token-stats.json`, mesmo depois de uma resposta completa;
+- o `mentor_get_run` responde logo e a resposta não vem compactada.
+
+Verifique estas causas por esta ordem:
+
+1. **Falta o Node.js, ou é anterior ao 18.** É a causa mais comum. Os hooks correm `node`, e sem ele falham sem gravar nada, embora as skills continuem a aparecer. Num terminal, corra:
+
+   ```bash
+   node --version
+   ```
+
+   Se der erro ou mostrar uma versão abaixo de 18:
+   - instale o Node.js LTS a partir de https://nodejs.org, ou no Windows com `winget install OpenJS.NodeJS.LTS`;
+   - feche e reabra a app Claude por completo, porque a app só vê o `PATH` novo depois de reiniciar.
+
+   A partir da versão 1.0.1, cada plugin verifica isto no início de cada sessão, através de um comando PowerShell. Se o Node.js faltar ou for anterior ao 18, o Claude recebe um aviso e sugere a instalação. O Claude não instala nada sem o utilizador pedir.
+
+   Esta verificação foi testada no Windows PowerShell 5.1. Ainda falta confirmá-la numa sessão real da app desktop. Em macOS ou Linux, só funciona se o PowerShell (`pwsh`) estiver instalado.
+
+2. **A sessão foi aberta antes de instalar ou activar o plugin.** Os hooks só carregam quando uma sessão começa. Abra uma sessão nova na mesma pasta, envie uma mensagem e volte a verificar.
+
+3. **O plugin não está activo nesta pasta, ou os hooks estão desligados.** Confirme duas coisas em `~/.claude/settings.json` ou no `.claude/settings.json` do projecto (secção 3):
+   - `"mentor-polling@noesis": true` e/ou `"token-usage@noesis": true` aparecem em `enabledPlugins`;
+   - não existe `"disableAllHooks": true`.
+
+### O ficheiro de tokens está noutra pasta
+
+`token-stats.json` fica na pasta em que a sessão foi aberta (a pasta de projecto da área Code), em `.claude/hooks/`. Cada pasta tem a sua própria contagem. Sessões na cloud não usam os plugins instalados localmente.

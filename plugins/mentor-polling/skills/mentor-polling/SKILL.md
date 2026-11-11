@@ -29,3 +29,5 @@ The compacted text is all the information you need to follow the run. Do not ask
 ## Without the hooks
 
 If the plugin's hooks are not active (another agent, or hooks disabled), follow the same cadence yourself: wait about 45 seconds between polls of the same run and summarize long outputs instead of repeating them.
+
+If the plugin is installed but polls return at once and the output is not compacted, the hooks are not running. The most common cause is Node.js missing or older than 18: the hooks run `node`. Ask the user to run `node --version` in a terminal. If it fails, suggest installing the Node.js LTS from https://nodejs.org (on Windows also `winget install OpenJS.NodeJS.LTS`) and then fully reopening the Claude app. Only run an install command if the user asks you to. If Node.js is fine, a new session is needed: hooks load when a session starts.

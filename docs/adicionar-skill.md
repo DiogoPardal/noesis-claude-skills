@@ -71,6 +71,7 @@ Quando a skill precisa de comportamento garantido (esperar, filtrar, medir), esc
    }
    ```
 
+   Acrescente também a entrada `SessionStart` com a verificação do Node.js, copiada de um plugin existente, e mude só o nome do plugin na mensagem. Assim, quem não tiver Node.js recebe um aviso em vez de ver os hooks falhar em silêncio. Junte o plugin novo à lista `PLUGINS` em `tests/node-check.test.cjs`.
 3. Acrescente testes em `tests/<id>.test.cjs` com dados **sintéticos** (nunca transcripts ou respostas reais). Os testes correm os scripts directamente a partir de `plugins/<id>/scripts/`.
 
 ## O que o validador verifica (`npm run validate`, também corre em `npm test`)
@@ -81,6 +82,7 @@ Quando a skill precisa de comportamento garantido (esperar, filtrar, medir), esc
   - eventos conhecidos e `type` igual a `command`;
   - `timeout` entre 1 e 600 s e matcher com regex válida;
   - comando no formato `node "${CLAUDE_PLUGIN_ROOT}/scripts/<nome>.cjs"`, com o script existente.
+  - **Única excepção:** em `SessionStart`, o comando padrão de verificação do Node.js, com `"shell": "powershell"`. Não pode ser um script, porque é precisamente o `node` que pode faltar. Corre em PowerShell, que existe em qualquer Windows, com ou sem Git Bash. Copie-o de um plugin existente e mude só o nome do plugin na mensagem. A mensagem não pode ter plicas nem aspas.
 - **Scripts:**
   - cada plugin é auto-suficiente: os `require` só apontam para `node:` ou para a própria pasta;
   - há aviso se um script não for usado por nenhum hook nem por outro script.
